@@ -8,16 +8,25 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 
 qt_standard_project_setup()
 
-set(RESOURCES resources/icons.qrc)
+set(RESOURCES
+    resources/icons.qrc)
 
-set(HEADERS src/Summary.h
-            src/TrayApplication.h)
+set(HEADERS
+    src/Config.h
+    src/Configuration.h
+    src/Summary.h
+    src/TrayApplication.h)
 
-set(SOURCES src/main.cpp
-            src/Summary.cpp
-            src/TrayApplication.cpp)
+set(SOURCES
+    src/Config.cpp
+    src/Configuration.cpp
+    src/main.cpp
+    src/Summary.cpp
+    src/TrayApplication.cpp)
 
-set(FORMS src/Summary.ui)
+set(FORMS
+    src/Configuration.ui
+    src/Summary.ui)
 
 qt_add_executable(TimeFlipAgent
     WIN32 MACOSX_BUNDLE
@@ -25,8 +34,6 @@ qt_add_executable(TimeFlipAgent
     ${SOURCES}
     ${FORMS}
     ${RESOURCES}
-    src/Configuration.h src/Configuration.cpp src/Configuration.ui
-    src/Config.h src/Config.cpp
 )
 
 target_link_libraries(TimeFlipAgent
