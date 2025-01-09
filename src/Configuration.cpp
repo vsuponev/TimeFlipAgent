@@ -27,14 +27,14 @@ void Configuration::showEvent(QShowEvent *event)
 
 void Configuration::initConfiguration()
 {
-    const Config& config = Config::instance();
+    const Config &config = Config::instance();
     ui->usernameEdit->setText(config.username);
     ui->passwordEdit->setText(config.password);
 }
 
 void Configuration::onSaveTriggered()
 {
-    Config& config = Config::instance();
+    Config &config = Config::instance();
 
     const QString newUsername = ui->usernameEdit->text();
     const QString newPassword = ui->passwordEdit->text();

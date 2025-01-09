@@ -28,7 +28,7 @@ TrayApplication::TrayApplication() {
     m_trayIcon->setContextMenu(trayMenu);
     m_trayIcon->show();
 
-    Config& config = Config::instance();
+    Config &config = Config::instance();
     config.load();
 
     // If not configured, show configuration dialog
