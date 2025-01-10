@@ -5,7 +5,7 @@ set(CMAKE_AUTORCC ON)
 
 qt_standard_project_setup()
 
-add_subdirectory(TimeFlipClient)
+add_subdirectory(TimeFlipApiClient)
 
 set(RESOURCES
     resources/icons.qrc

@@ -25,6 +25,7 @@ public:
     bool authenticate();
 
     void requestTasks();
+    void sync();
 
     QString lastError() const;
     QByteArray token() const;
@@ -41,6 +42,7 @@ private slots:
 
     void handleAuthenticationResponse(QNetworkReply *reply);
     void handleTasksResponse(QNetworkReply *reply);
+    void handleSyncResponse(QNetworkReply *reply);
 
     void setError(const QString &message);
 

@@ -10,6 +10,7 @@
 const QString TIMEFLIP_API_URL = "https://newapi.timeflip.io/api";
 const QString TIMEFLIP_API_ENDPOINT_SIGNIN = "auth/email/sign-in";
 const QString TIMEFLIP_API_ENDPOINT_TASKS = "tasks/byUser";
+const QString TIMEFLIP_API_ENDPOINT_SYNC = "sync";
 
 namespace {
 
@@ -76,6 +77,25 @@ void TimeFlipApiClient::requestTasks()
     QNetworkReply *reply = m_networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         handleTasksResponse(reply);
+    });
+}
+
+void TimeFlipApiClient::sync()
+{
+    qDebug() << "Syncing...";
+    if (!isAuthenticated()) {
+        setError("Not authenticated");
+        return;
+    }
+
+
+    const QString url = endpointUrl(TIMEFLIP_API_ENDPOINT_SYNC);
+    QNetworkRequest request(url);
+    addAuthorizationHeader(request);
+
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        handleSyncResponse(reply);
     });
 }
 
@@ -154,6 +174,23 @@ void TimeFlipApiClient::handleTasksResponse(QNetworkReply *reply)
         m_tasks.append(Task::fromJson(taskObject));
     }
     qDebug() << m_tasks.count() << "tasks received";
+    emit tasksReceived();
+}
+
+void TimeFlipApiClient::handleSyncResponse(QNetworkReply *reply)
+{
+    qDebug() << "Sync response received";
+    auto guard = qScopeGuard([reply]() {
+        reply->deleteLater();
+    });
+
+    const ResponseResult result = ResponseResult::fromReply(reply);
+
+    if (checkError(reply, result)) {
+        return;
+    }
+
+    qDebug() << result.data;
 }
 
 void TimeFlipApiClient::setError(const QString &message)
