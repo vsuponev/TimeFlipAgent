@@ -17,6 +17,6 @@ public:
     bool save();
 
 public:
-    QString username;
+    QString email;
     QString password;
 };

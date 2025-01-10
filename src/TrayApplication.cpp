@@ -4,13 +4,17 @@
 #include "Configuration.h"
 #include "Summary.h"
 
+#include "TimeFlipApiClient.h"
+
 #include <QApplication>
 #include <QIcon>
 #include <QMenu>
 #include <QScreen>
 #include <QSystemTrayIcon>
 
-TrayApplication::TrayApplication() {
+using namespace TimeFlipApi;
+
+TrayApplication::TrayApplication() : m_apiClient(new TimeFlipApiClient(this)) {
     m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/TimeFlip.png"), this);
 
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, &TrayApplication::handleTrayIconActivation);
@@ -25,6 +29,15 @@ TrayApplication::TrayApplication() {
     QAction *quitAction = trayMenu->addAction("Quit");
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
 
+    connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
+
+    connect(m_apiClient, &TimeFlipApiClient::error, [this](const QString &message) {
+        m_trayIcon->showMessage("Error", message, QSystemTrayIcon::Critical);
+    });
+    connect(m_apiClient, &TimeFlipApiClient::authenticated, [this](const UserInfo &userInfo) {
+        m_trayIcon->showMessage("Authenticated", "Successfully authenticated as " + userInfo.fullName);
+    });
+
     m_trayIcon->setContextMenu(trayMenu);
     m_trayIcon->show();
 
@@ -34,6 +47,9 @@ TrayApplication::TrayApplication() {
     // If not configured, show configuration dialog
     if (!config.isValid()) {
         showConfiguration();
+    }
+    else {
+        applyConfiguration();
     }
 }
 
@@ -74,7 +90,7 @@ void TrayApplication::showConfiguration()
     if (m_configuration == nullptr) {
         m_configuration = std::make_unique<Configuration>(nullptr);
         m_configuration->setWindowFlags(m_configuration->windowFlags() | Qt::WindowStaysOnTopHint);
-        connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::handleConfigurationUpdate);
+        connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
     }
 
     if (m_configuration->isHidden()) {
@@ -84,9 +100,16 @@ void TrayApplication::showConfiguration()
     }
 }
 
-void TrayApplication::handleConfigurationUpdate()
+void TrayApplication::applyConfiguration()
 {
-    m_trayIcon->showMessage("Communication error", "Unable to connect to the TimeFlip2 server!", QSystemTrayIcon::Warning);
+    const Credentials credentials {
+        .email = Config::instance().email,
+        .password = Config::instance().password
+    };
+    m_apiClient->setCredentials(credentials);
+    if (credentials.isValid()) {
+        m_apiClient->authenticate();
+    }
 }
 
 void TrayApplication::positionWidgetBottomRight(QWidget *widget)

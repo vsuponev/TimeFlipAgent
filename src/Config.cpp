@@ -16,7 +16,7 @@ Config &Config::instance()
 
 bool Config::isValid() const
 {
-    return !username.isEmpty() && !password.isEmpty();
+    return !email.isEmpty() && !password.isEmpty();
 }
 
 QString Config::configFilePath() const
@@ -48,7 +48,7 @@ bool Config::load()
     QSettings settings(path, QSettings::IniFormat);
 
     settings.beginGroup("Credentials");
-    username = settings.value("username", "").toString();
+    email = settings.value("username", "").toString();
     password = settings.value("password", "").toString();
     settings.endGroup();
 
@@ -64,7 +64,7 @@ bool Config::save()
 
     // Begin writing to the INI file
     settings.beginGroup("Credentials");
-    settings.setValue("username", username);
+    settings.setValue("username", email);
     settings.setValue("password", password);
     settings.endGroup();
 

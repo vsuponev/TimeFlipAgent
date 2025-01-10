@@ -33,7 +33,7 @@ void Configuration::showEvent(QShowEvent *event)
 void Configuration::initConfiguration()
 {
     const Config &config = Config::instance();
-    ui->usernameEdit->setText(config.username);
+    ui->usernameEdit->setText(config.email);
     ui->passwordEdit->setText(config.password);
 }
 
@@ -44,13 +44,13 @@ void Configuration::onSaveTriggered()
     const QString newUsername = ui->usernameEdit->text();
     const QString newPassword = ui->passwordEdit->text();
 
-    if (newUsername == config.username && newPassword == config.password) {
+    if (newUsername == config.email && newPassword == config.password) {
         close();
         return;
     }
 
     // Something was updated, save the config
-    config.username = ui->usernameEdit->text();
+    config.email = ui->usernameEdit->text();
     config.password = ui->passwordEdit->text();
     config.save();
     emit configurationUpdated();
