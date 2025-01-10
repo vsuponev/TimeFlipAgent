@@ -6,24 +6,21 @@
 class Configuration;
 class Summary;
 
-namespace TimeFlipApi {
-    class TimeFlipApiClient;
+namespace TimeFlipBT {
+    class TimeFlipBTClient;
 }
 
 class TrayApplication : public QObject
 {
     Q_OBJECT
 public:
-    TrayApplication();
+    TrayApplication(QObject *parent = nullptr);
     ~TrayApplication();
 
 private slots:
     void handleTrayIconActivation(QSystemTrayIcon::ActivationReason reason);
 
     void showSummary();
-    void showConfiguration();
-
-    void applyConfiguration();
 
     void positionWidgetBottomRight(QWidget *widget);
 
@@ -31,5 +28,5 @@ private:
     QSystemTrayIcon *m_trayIcon = nullptr;
     std::unique_ptr<Configuration> m_configuration;
     std::unique_ptr<Summary> m_summary;
-    TimeFlipApi::TimeFlipApiClient *m_apiClient;
+    TimeFlipBT::TimeFlipBTClient *m_btClient;
 };

@@ -5,6 +5,7 @@
 #include "Summary.h"
 
 #include "TimeFlipApiClient.h"
+#include "TimeFlipBTClient.h"
 
 #include <QApplication>
 #include <QIcon>
@@ -13,8 +14,12 @@
 #include <QSystemTrayIcon>
 
 using namespace TimeFlipApi;
+using namespace TimeFlipBT;
 
-TrayApplication::TrayApplication() : m_apiClient(new TimeFlipApiClient(this)) {
+TrayApplication::TrayApplication(QObject *parent)
+    : QObject(parent)
+    , m_btClient(new TimeFlipBTClient(this))
+{
     m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/TimeFlip.png"), this);
 
     connect(m_trayIcon, &QSystemTrayIcon::activated, this, &TrayApplication::handleTrayIconActivation);
@@ -23,24 +28,9 @@ TrayApplication::TrayApplication() : m_apiClient(new TimeFlipApiClient(this)) {
     QMenu *trayMenu = new QMenu();
     QAction *summaryAction = trayMenu->addAction("Summary");
     connect(summaryAction, &QAction::triggered, this, &TrayApplication::showSummary);
-    QAction *configurationAction = trayMenu->addAction("Configuration");
-    connect(configurationAction, &QAction::triggered, this, &TrayApplication::showConfiguration);
     trayMenu->addSeparator();
     QAction *quitAction = trayMenu->addAction("Quit");
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
-
-    connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
-
-    connect(m_apiClient, &TimeFlipApiClient::error, [this](const QString &message) {
-        m_trayIcon->showMessage("Error", message, QSystemTrayIcon::Critical);
-    });
-    connect(m_apiClient, &TimeFlipApiClient::authenticated, [this](const UserInfo &userInfo) {
-        m_trayIcon->showMessage("Success!", "Logged in as " + userInfo.fullName);
-        m_apiClient->requestTasks();
-    });
-    connect(m_apiClient, &TimeFlipApiClient::tasksReceived, [this]() {
-        m_trayIcon->showMessage("Success!", "Tasks list received");
-    });
 
     m_trayIcon->setContextMenu(trayMenu);
     m_trayIcon->show();
@@ -48,13 +38,7 @@ TrayApplication::TrayApplication() : m_apiClient(new TimeFlipApiClient(this)) {
     Config &config = Config::instance();
     config.load();
 
-    // If not configured, show configuration dialog
-    if (!config.isValid()) {
-        showConfiguration();
-    }
-    else {
-        applyConfiguration();
-    }
+    m_btClient->startDiscovery();
 }
 
 void TrayApplication::handleTrayIconActivation(QSystemTrayIcon::ActivationReason reason)
@@ -86,33 +70,6 @@ void TrayApplication::showSummary()
         positionWidgetBottomRight(m_summary.get());
     } else {
         m_summary->hide();
-    }
-}
-
-void TrayApplication::showConfiguration()
-{
-    if (m_configuration == nullptr) {
-        m_configuration = std::make_unique<Configuration>(nullptr);
-        m_configuration->setWindowFlags(m_configuration->windowFlags() | Qt::WindowStaysOnTopHint);
-        connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
-    }
-
-    if (m_configuration->isHidden()) {
-        m_configuration->show();
-    } else {
-        m_configuration->hide();
-    }
-}
-
-void TrayApplication::applyConfiguration()
-{
-    const Credentials credentials {
-        .email = Config::instance().email,
-        .password = Config::instance().password
-    };
-    m_apiClient->setCredentials(credentials);
-    if (credentials.isValid()) {
-        m_apiClient->authenticate();
     }
 }
 

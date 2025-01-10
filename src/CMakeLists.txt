@@ -6,6 +6,7 @@ set(CMAKE_AUTORCC ON)
 qt_standard_project_setup()
 
 add_subdirectory(TimeFlipApiClient)
+add_subdirectory(TimeFlipBTClient)
 
 set(RESOURCES
     resources/icons.qrc
@@ -42,6 +43,7 @@ qt_add_executable(TimeFlipAgent
 target_link_libraries(TimeFlipAgent
     PRIVATE
         TimeFlipApiClient
+        TimeFlipBTClient
         Qt6::Core
         Qt6::Widgets
 )
