@@ -7,6 +7,7 @@ namespace TimeFlipApi {
 
 struct Task {
     int id = -1;
+    int sideIndex = -1;
     QString name;
     QString description;
     QString color;
@@ -22,6 +23,7 @@ struct Task {
     {
         Task task;
         task.id = object["id"].toInt();
+        task.sideIndex = object["sideIndex"].toInt();
         task.name = object["name"].toString();
         task.description = object["description"].toString();
         task.color = object["color"].toString();
