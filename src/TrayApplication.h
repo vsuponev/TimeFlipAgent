@@ -26,7 +26,6 @@ private slots:
 
 private:
     QSystemTrayIcon *m_trayIcon = nullptr;
-    std::unique_ptr<Configuration> m_configuration;
     std::unique_ptr<Summary> m_summary;
     TimeFlipBT::TimeFlipBTClient *m_btClient;
 };
