@@ -3,6 +3,8 @@
 
 #include "Config.h"
 
+#include <QDesktopServices>
+
 Configuration::Configuration(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::Configuration)
@@ -11,6 +13,9 @@ Configuration::Configuration(QWidget *parent)
 
     connect(ui->saveButton, &QPushButton::clicked, this, &Configuration::onSaveTriggered);
     connect(ui->cancelButton, &QPushButton::clicked, this, &QDialog::close);
+    connect(ui->signupLabel, &QLabel::linkActivated, [](const QString &link) {
+        QDesktopServices::openUrl(link);
+    });
 }
 
 Configuration::~Configuration()
