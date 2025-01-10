@@ -86,18 +86,15 @@ void TimeFlipApiClient::handleAuthenticationResponse(QNetworkReply *reply)
         reply->deleteLater();
     });
 
+    const ResponseResult result = ResponseResult::fromReply(reply);
+
     if (reply->error() != QNetworkReply::NoError) {
-        handleError(reply);
+        handleError(reply, result);
         return;
     }
 
-    const int httpCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    const QByteArray data = reply->readAll();
-    const QJsonDocument doc = QJsonDocument::fromJson(data);
-    const QJsonObject object = doc.object();
-
-    if (httpCode != 200) {
-        const Error error = Error::fromJson(object);
+    if (result.httpCode != 200) {
+        const Error error = Error::fromJson(result.json);
         if (error.isValid()) {
             setError(error.message);
             return;
@@ -106,26 +103,22 @@ void TimeFlipApiClient::handleAuthenticationResponse(QNetworkReply *reply)
         return;
     }
 
-    const QJsonObject userObject = object["user"].toObject();
+    const QJsonObject userObject = result.json["user"].toObject();
     m_userInfo = UserInfo::fromJson(userObject);
     emit authenticated(m_userInfo);
 }
 
-void TimeFlipApiClient::handleError(QNetworkReply *reply)
+void TimeFlipApiClient::handleError(QNetworkReply *reply, const ResponseResult &result)
 {
     if (reply->error() == QNetworkReply::NoError) {
         qDebug() << "No error";
         return;
     }
 
-    const int httpCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    const QByteArray data = reply->readAll();
-    qDebug() << data;
-    const QJsonDocument doc = QJsonDocument::fromJson(data);
-    const QJsonObject object = doc.object();
+    const ResponseResult responseResult = result.isValid() ? result : ResponseResult::fromReply(reply);
 
-    if (httpCode != 200) {
-        const Error error = Error::fromJson(object);
+    if (responseResult.httpCode != 200) {
+        const Error error = Error::fromJson(responseResult.json);
         if (error.isValid()) {
             setError(error.message);
             return;

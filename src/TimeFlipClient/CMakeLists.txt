@@ -3,6 +3,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Network)
 set(HEADERS
     Credentials.h
     Error.h
+    ResponseResult.h
     TimeFlipApiClient.h
     UserInfo.h
 )

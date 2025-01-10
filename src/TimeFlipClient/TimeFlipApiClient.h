@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Credentials.h"
+#include "ResponseResult.h"
 #include "UserInfo.h"
 
 #include <QByteArray>
@@ -35,7 +36,7 @@ signals:
 
 private slots:
     void handleAuthenticationResponse(QNetworkReply *reply);
-    void handleError(QNetworkReply *reply);
+    void handleError(QNetworkReply *reply, const ResponseResult &result = {});
 
     void setError(const QString &message);
 
