@@ -1,8 +1,10 @@
 #include "TrayApplication.h"
 
 #include "Config.h"
+#include "Configuration.h"
 #include "Summary.h"
 
+#include "TimeFlipApiClient.h"
 #include "TimeFlipBTClient.h"
 
 #include <QApplication>
@@ -11,6 +13,7 @@
 #include <QScreen>
 #include <QSystemTrayIcon>
 
+using namespace TimeFlipApi;
 using namespace TimeFlipBT;
 
 TrayApplication::TrayApplication(QObject *parent)
