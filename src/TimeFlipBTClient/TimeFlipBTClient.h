@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QBluetoothDeviceInfo>
+#include <QBluetoothDeviceDiscoveryAgent>
 #include <QLowEnergyController>
 #include <QObject>
 
@@ -22,17 +23,23 @@ private slots:
     void connectToDevice(const QBluetoothDeviceInfo &device);
 
     void deviceDiscovered(const QBluetoothDeviceInfo &device);
-    void scanFinished();
+    void handleScanFinished();
+    void connectedToDevice();
+    void serviceDiscovered(const QBluetoothUuid &newService);
 
-    void handleError(QLowEnergyController::Error newError);
+    void handleDiscoveryError(QBluetoothDeviceDiscoveryAgent::Error err);
+    void handleConnectionError(QLowEnergyController::Error err);
 
 signals:
     void connected();
     void disconnected();
+    void scanFinished();
+    void error(const QString &errorString);
 
 private:
-    QBluetoothDeviceDiscoveryAgent *discoveryAgent = nullptr;
-    QLowEnergyController *controller = nullptr;
+    QBluetoothDeviceDiscoveryAgent *m_discoveryAgent = nullptr;
+    QLowEnergyController *m_controller = nullptr;
+    QLowEnergyService *m_service = nullptr;
 };
 
 } // namespace TimeFlipBT

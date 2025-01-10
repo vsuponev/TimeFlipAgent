@@ -18,6 +18,7 @@ using namespace TimeFlipBT;
 
 TrayApplication::TrayApplication(QObject *parent)
     : QObject(parent)
+    , m_apiClient(new TimeFlipApiClient(this))
     , m_btClient(new TimeFlipBTClient(this))
 {
     m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/TimeFlip.png"), this);
@@ -31,10 +32,30 @@ TrayApplication::TrayApplication(QObject *parent)
     trayMenu->addSeparator();
     QAction *quitAction = trayMenu->addAction("Quit");
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+    QAction *configurationAction = trayMenu->addAction("Configuration");
+    connect(configurationAction, &QAction::triggered, this, &TrayApplication::showConfiguration);
 
+    // Setup Configuration widget connections
+    connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
+
+    // Setup API client
+    connect(m_apiClient, &TimeFlipApiClient::error, [this](const QString &message) {
+        m_trayIcon->showMessage("Error", message, QSystemTrayIcon::Critical);
+    });
+    connect(m_apiClient, &TimeFlipApiClient::authenticated, [this](const UserInfo &userInfo) {
+        m_trayIcon->showMessage("Success!", "Logged in as " + userInfo.fullName);
+        m_apiClient->requestTasks();
+    });
+    connect(m_apiClient, &TimeFlipApiClient::tasksReceived, [this]() {
+        m_trayIcon->showMessage("Success!", "Tasks list received");
+        m_btClient->startDiscovery();
+    });
+
+    // Setup BT client
     connect(m_btClient, &TimeFlipBTClient::connected, this, &TrayApplication::handleConnectionToDevice);
     connect(m_btClient, &TimeFlipBTClient::disconnected, this, &TrayApplication::handleDisconnectionFromDevice);
-
+    connect(m_btClient, &TimeFlipBTClient::scanFinished, this, &TrayApplication::handleScanFinished);
+    connect(m_btClient, &TimeFlipBTClient::error, this, &TrayApplication::handleError);
 
     m_trayIcon->setContextMenu(trayMenu);
     m_trayIcon->show();
@@ -42,17 +63,33 @@ TrayApplication::TrayApplication(QObject *parent)
     Config &config = Config::instance();
     config.load();
 
-    m_btClient->startDiscovery();
+    // If not configured, show configuration dialog
+    if (!config.isValid()) {
+        showConfiguration();
+    }
+    else {
+        applyConfiguration();
+    }
 }
 
 void TrayApplication::handleConnectionToDevice()
 {
-    m_trayIcon->showMessage("TimeFlip", "Connected to a TimeFlip device", QSystemTrayIcon::Information);
+    m_trayIcon->showMessage("", "Connected to a TimeFlip device", QSystemTrayIcon::Information);
 }
 
 void TrayApplication::handleDisconnectionFromDevice()
 {
-    m_trayIcon->showMessage("TimeFlip", "Disconnected from a TimeFlip device", QSystemTrayIcon::Information);
+    m_trayIcon->showMessage("", "Disconnected from a TimeFlip device", QSystemTrayIcon::Information);
+}
+
+void TrayApplication::handleScanFinished()
+{
+    m_trayIcon->showMessage("", "Scanning devices finished...", QSystemTrayIcon::Information);
+}
+
+void TrayApplication::handleError(const QString &errorString)
+{
+    m_trayIcon->showMessage("", errorString, QSystemTrayIcon::Critical);
 }
 
 void TrayApplication::handleTrayIconActivation(QSystemTrayIcon::ActivationReason reason)
@@ -71,6 +108,34 @@ void TrayApplication::handleTrayIconActivation(QSystemTrayIcon::ActivationReason
 }
 
 TrayApplication::~TrayApplication() = default;
+
+
+void TrayApplication::showConfiguration()
+{
+    if (m_configuration == nullptr) {
+        m_configuration = std::make_unique<Configuration>(nullptr);
+        m_configuration->setWindowFlags(m_configuration->windowFlags() | Qt::WindowStaysOnTopHint);
+        connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
+    }
+
+    if (m_configuration->isHidden()) {
+        m_configuration->show();
+    } else {
+        m_configuration->hide();
+    }
+}
+
+void TrayApplication::applyConfiguration()
+{
+    const Credentials credentials {
+        .email = Config::instance().email,
+        .password = Config::instance().password
+    };
+    m_apiClient->setCredentials(credentials);
+    if (credentials.isValid()) {
+        m_apiClient->authenticate();
+    }
+}
 
 void TrayApplication::showSummary()
 {
