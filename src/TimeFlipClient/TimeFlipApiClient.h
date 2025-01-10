@@ -2,6 +2,7 @@
 
 #include "Credentials.h"
 #include "ResponseResult.h"
+#include "Task.h"
 #include "UserInfo.h"
 
 #include <QByteArray>
@@ -28,6 +29,7 @@ public:
     QString lastError() const;
     QByteArray token() const;
     UserInfo userInfo() const;
+    QVector<Task> tasks() const;
 
 signals:
     void authenticated(const UserInfo &userInfo);
@@ -35,10 +37,15 @@ signals:
     void error(const QString &message);
 
 private slots:
+    bool checkError(QNetworkReply *reply, const ResponseResult &result = {});
+
     void handleAuthenticationResponse(QNetworkReply *reply);
-    void handleError(QNetworkReply *reply, const ResponseResult &result = {});
+    void handleTasksResponse(QNetworkReply *reply);
 
     void setError(const QString &message);
+
+private:
+    void addAuthorizationHeader(QNetworkRequest &request);
 
 private:
     QByteArray m_token;
@@ -48,6 +55,7 @@ private:
 
     Credentials m_credentials;
     UserInfo m_userInfo;
+    QVector<Task> m_tasks;
 };
 
 } // namespace TimeFlipApi

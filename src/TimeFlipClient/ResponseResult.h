@@ -1,13 +1,12 @@
 #pragma once
 
 #include <QJsonDocument>
-#include <QJsonObject>
 #include <QNetworkReply>
 
 struct ResponseResult {
     int httpCode = 0;
     QByteArray data;
-    QJsonObject json;
+    QJsonDocument json;
 
     bool isValid() const
     {
@@ -19,7 +18,7 @@ struct ResponseResult {
         ResponseResult result;
         result.httpCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         result.data = reply->readAll();
-        result.json = QJsonDocument::fromJson(result.data).object();
+        result.json = QJsonDocument::fromJson(result.data);
         return result;
     }
 };

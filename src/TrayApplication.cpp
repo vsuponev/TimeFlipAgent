@@ -35,7 +35,11 @@ TrayApplication::TrayApplication() : m_apiClient(new TimeFlipApiClient(this)) {
         m_trayIcon->showMessage("Error", message, QSystemTrayIcon::Critical);
     });
     connect(m_apiClient, &TimeFlipApiClient::authenticated, [this](const UserInfo &userInfo) {
-        m_trayIcon->showMessage("Authenticated", "Successfully authenticated as " + userInfo.fullName);
+        m_trayIcon->showMessage("Success!", "Logged in as " + userInfo.fullName);
+        m_apiClient->requestTasks();
+    });
+    connect(m_apiClient, &TimeFlipApiClient::tasksReceived, [this]() {
+        m_trayIcon->showMessage("Success!", "Tasks list received");
     });
 
     m_trayIcon->setContextMenu(trayMenu);

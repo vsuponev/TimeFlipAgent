@@ -2,13 +2,14 @@
 
 #include "Error.h"
 
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
 const QString TIMEFLIP_API_URL = "https://newapi.timeflip.io/api";
 const QString TIMEFLIP_API_ENDPOINT_SIGNIN = "auth/email/sign-in";
-const QString TIMEFLIP_API_ENDPOINT_TASKS = "report/daily";
+const QString TIMEFLIP_API_ENDPOINT_TASKS = "tasks/byUser";
 
 namespace {
 
@@ -62,7 +63,20 @@ bool TimeFlipApiClient::authenticate()
 
 void TimeFlipApiClient::requestTasks()
 {
+    if (!isAuthenticated()) {
+        setError("Not authenticated");
+        return;
+    }
 
+
+    const QString url = endpointUrl(TIMEFLIP_API_ENDPOINT_TASKS);
+    QNetworkRequest request(url);
+    addAuthorizationHeader(request);
+
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        handleTasksResponse(reply);
+    });
 }
 
 QString TimeFlipApiClient::lastError() const
@@ -80,6 +94,29 @@ UserInfo TimeFlipApiClient::userInfo() const
     return m_userInfo;
 }
 
+QVector<Task> TimeFlipApiClient::tasks() const
+{
+    return m_tasks;
+}
+
+bool TimeFlipApiClient::checkError(QNetworkReply *reply, const ResponseResult &result)
+{
+    if (reply->error() == QNetworkReply::NoError || result.httpCode == 200) {
+        return false;
+    }
+
+    const ResponseResult responseResult = result.isValid() ? result : ResponseResult::fromReply(reply);
+
+    const Error error = Error::fromJson(responseResult.json.object());
+    if (error.isValid()) {
+        setError(error.message);
+        return true;
+    }
+
+    setError(reply->errorString());
+    return true;
+}
+
 void TimeFlipApiClient::handleAuthenticationResponse(QNetworkReply *reply)
 {
     auto guard = qScopeGuard([reply]() {
@@ -88,43 +125,35 @@ void TimeFlipApiClient::handleAuthenticationResponse(QNetworkReply *reply)
 
     const ResponseResult result = ResponseResult::fromReply(reply);
 
-    if (reply->error() != QNetworkReply::NoError) {
-        handleError(reply, result);
-        return;
-    }
-
-    if (result.httpCode != 200) {
-        const Error error = Error::fromJson(result.json);
-        if (error.isValid()) {
-            setError(error.message);
-            return;
-        }
-        setError("Authentication failed");
+    if (checkError(reply, result)) {
         return;
     }
 
     const QJsonObject userObject = result.json["user"].toObject();
     m_userInfo = UserInfo::fromJson(userObject);
+    m_token = reply->rawHeader("token");
     emit authenticated(m_userInfo);
 }
 
-void TimeFlipApiClient::handleError(QNetworkReply *reply, const ResponseResult &result)
+void TimeFlipApiClient::handleTasksResponse(QNetworkReply *reply)
 {
-    if (reply->error() == QNetworkReply::NoError) {
-        qDebug() << "No error";
+    auto guard = qScopeGuard([reply]() {
+        reply->deleteLater();
+    });
+
+    const ResponseResult result = ResponseResult::fromReply(reply);
+
+    if (checkError(reply, result)) {
         return;
     }
 
-    const ResponseResult responseResult = result.isValid() ? result : ResponseResult::fromReply(reply);
-
-    if (responseResult.httpCode != 200) {
-        const Error error = Error::fromJson(responseResult.json);
-        if (error.isValid()) {
-            setError(error.message);
-            return;
-        }
+    m_tasks.clear();
+    const QJsonArray tasksArray = result.json.array();
+    for (const auto &taskValue : tasksArray) {
+        const QJsonObject taskObject = taskValue.toObject();
+        m_tasks.append(Task::fromJson(taskObject));
     }
-    setError("Authentication failed");
+    qDebug() << m_tasks.count() << "tasks received";
 }
 
 void TimeFlipApiClient::setError(const QString &message)
@@ -132,6 +161,16 @@ void TimeFlipApiClient::setError(const QString &message)
     qDebug() << "Error:" << message;
     m_lastError = message;
     emit error(message);
+}
+
+void TimeFlipApiClient::addAuthorizationHeader(QNetworkRequest &request)
+{
+    if (m_token.isEmpty()) {
+        return;
+    }
+
+    const QByteArray authorization = "Bearer " + m_token;
+    request.setRawHeader("Authorization", authorization);
 }
 
 } // namespace TimeFlipApi

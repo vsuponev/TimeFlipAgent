@@ -4,6 +4,7 @@ set(HEADERS
     Credentials.h
     Error.h
     ResponseResult.h
+    Task.h
     TimeFlipApiClient.h
     UserInfo.h
 )
