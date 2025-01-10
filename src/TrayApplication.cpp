@@ -29,6 +29,10 @@ TrayApplication::TrayApplication(QObject *parent)
     QAction *quitAction = trayMenu->addAction("Quit");
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
 
+    connect(m_btClient, &TimeFlipBTClient::connected, this, &TrayApplication::handleConnectionToDevice);
+    connect(m_btClient, &TimeFlipBTClient::disconnected, this, &TrayApplication::handleDisconnectionFromDevice);
+
+
     m_trayIcon->setContextMenu(trayMenu);
     m_trayIcon->show();
 
@@ -36,6 +40,16 @@ TrayApplication::TrayApplication(QObject *parent)
     config.load();
 
     m_btClient->startDiscovery();
+}
+
+void TrayApplication::handleConnectionToDevice()
+{
+    m_trayIcon->showMessage("TimeFlip", "Connected to a TimeFlip device", QSystemTrayIcon::Information);
+}
+
+void TrayApplication::handleDisconnectionFromDevice()
+{
+    m_trayIcon->showMessage("TimeFlip", "Disconnected from a TimeFlip device", QSystemTrayIcon::Information);
 }
 
 void TrayApplication::handleTrayIconActivation(QSystemTrayIcon::ActivationReason reason)

@@ -18,6 +18,9 @@ public:
     ~TrayApplication();
 
 private slots:
+    void handleConnectionToDevice();
+    void handleDisconnectionFromDevice();
+
     void handleTrayIconActivation(QSystemTrayIcon::ActivationReason reason);
 
     void showSummary();
