@@ -48,6 +48,21 @@ TrayApplication::TrayApplication(QObject *parent)
         m_btClient->startDiscovery();
     });
 
+    connect(m_btClient, &TimeFlipBTClient::facetChanged, this, [this](int facet) {
+        const auto task = m_apiClient->taskBySideIndex(facet);
+        if (!task.isValid()) {
+            qCritical() << "Invalid task";
+            return;
+        }
+        qDebug().noquote().nospace() << "Active facet [" << facet << "]: " << task.name;
+        if (m_summary) {
+            m_summary->updateActiveFacet(task.name, task.color);
+        }
+        else {
+            m_trayIcon->showMessage("", task.name, QSystemTrayIcon::Information);
+        }
+    });
+
     // Setup BT client
     connect(m_btClient, &TimeFlipBTClient::connected, this, &TrayApplication::handleConnectionToDevice);
     connect(m_btClient, &TimeFlipBTClient::disconnected, this, &TrayApplication::handleDisconnectionFromDevice);
@@ -72,6 +87,8 @@ TrayApplication::TrayApplication(QObject *parent)
 void TrayApplication::handleConnectionToDevice()
 {
     m_trayIcon->showMessage("", "Connected to a TimeFlip device", QSystemTrayIcon::Information);
+    qDebug() << "Requesting active facet info...";
+    m_btClient->getActiveFacet();
 }
 
 void TrayApplication::handleDisconnectionFromDevice()
