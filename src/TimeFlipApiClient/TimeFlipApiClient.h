@@ -31,6 +31,7 @@ public:
     QByteArray token() const;
     UserInfo userInfo() const;
     QVector<Task> tasks() const;
+    Task taskBySideIndex(int sideIndex) const;
 
 signals:
     void authenticated(const UserInfo &userInfo);

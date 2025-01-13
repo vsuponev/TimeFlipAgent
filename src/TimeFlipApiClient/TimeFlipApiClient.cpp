@@ -119,6 +119,16 @@ QVector<Task> TimeFlipApiClient::tasks() const
     return m_tasks;
 }
 
+Task TimeFlipApiClient::taskBySideIndex(int sideIndex) const
+{
+    for (const Task &task : m_tasks) {
+        if (task.sideIndex == sideIndex) {
+            return task;
+        }
+    }
+    return {};
+}
+
 bool TimeFlipApiClient::checkError(QNetworkReply *reply, const ResponseResult &result)
 {
     if (reply->error() == QNetworkReply::NoError || result.httpCode == 200) {
