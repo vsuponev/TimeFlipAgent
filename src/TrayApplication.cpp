@@ -29,25 +29,22 @@ TrayApplication::TrayApplication(QObject *parent)
     QMenu *trayMenu = new QMenu();
     QAction *summaryAction = trayMenu->addAction("Summary");
     connect(summaryAction, &QAction::triggered, this, &TrayApplication::showSummary);
+    QAction *configurationAction = trayMenu->addAction("Configuration");
+    connect(configurationAction, &QAction::triggered, this, &TrayApplication::showConfiguration);
     trayMenu->addSeparator();
     QAction *quitAction = trayMenu->addAction("Quit");
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
-    QAction *configurationAction = trayMenu->addAction("Configuration");
-    connect(configurationAction, &QAction::triggered, this, &TrayApplication::showConfiguration);
-
-    // Setup Configuration widget connections
-    connect(m_configuration.get(), &Configuration::configurationUpdated, this, &TrayApplication::applyConfiguration);
 
     // Setup API client
-    connect(m_apiClient, &TimeFlipApiClient::error, [this](const QString &message) {
+    connect(m_apiClient, &TimeFlipApiClient::error, this, [this](const QString &message) {
         m_trayIcon->showMessage("Error", message, QSystemTrayIcon::Critical);
     });
-    connect(m_apiClient, &TimeFlipApiClient::authenticated, [this](const UserInfo &userInfo) {
-        m_trayIcon->showMessage("Success!", "Logged in as " + userInfo.fullName);
+    connect(m_apiClient, &TimeFlipApiClient::authenticated, this, [this](const UserInfo &userInfo) {
+        m_trayIcon->showMessage("", "Logged in as " + userInfo.fullName);
         m_apiClient->requestTasks();
     });
-    connect(m_apiClient, &TimeFlipApiClient::tasksReceived, [this]() {
-        m_trayIcon->showMessage("Success!", "Tasks list received");
+    connect(m_apiClient, &TimeFlipApiClient::tasksReceived, this, [this]() {
+        qDebug() << "Tasks list received";
         m_btClient->startDiscovery();
     });
 
@@ -84,7 +81,7 @@ void TrayApplication::handleDisconnectionFromDevice()
 
 void TrayApplication::handleScanFinished()
 {
-    m_trayIcon->showMessage("", "Scanning devices finished...", QSystemTrayIcon::Information);
+    m_trayIcon->showMessage("", "No TimeFlip device detected...", QSystemTrayIcon::Information);
 }
 
 void TrayApplication::handleError(const QString &errorString)
