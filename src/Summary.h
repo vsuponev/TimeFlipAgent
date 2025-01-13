@@ -14,6 +14,9 @@ public:
     explicit Summary(QWidget *parent = nullptr);
     ~Summary();
 
+public slots:
+    void updateActiveFacet(const QString &name, const QString &color);
+
 private:
     Ui::Summary *ui;
 };

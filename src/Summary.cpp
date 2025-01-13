@@ -12,3 +12,9 @@ Summary::~Summary()
 {
     delete ui;
 }
+
+void Summary::updateActiveFacet(const QString &name, const QString &color)
+{
+    const QString taskDescription = QStringLiteral("<span style='font-weight:bold;color:%1;'>%2</span>").arg(color, name);
+    ui->currentTask->setText(taskDescription);
+}
