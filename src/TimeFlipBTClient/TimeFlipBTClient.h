@@ -16,8 +16,11 @@ class TimeFlipBTClient : public QObject
 
 public:
     TimeFlipBTClient(QObject *parent = nullptr);
+    ~TimeFlipBTClient();
 
     void startDiscovery();
+
+    void getActiveFacet();
 
 private slots:
     void connectToDevice(const QBluetoothDeviceInfo &device);
@@ -26,15 +29,22 @@ private slots:
     void handleScanFinished();
     void connectedToDevice();
     void serviceDiscovered(const QBluetoothUuid &newService);
+    void enableCharacteristicNotifications(const QLowEnergyCharacteristic &info);
 
     void handleDiscoveryError(QBluetoothDeviceDiscoveryAgent::Error err);
     void handleConnectionError(QLowEnergyController::Error err);
+    void handleServiceError(QLowEnergyService::ServiceError err);
+    void handleServiceStateChanged(QLowEnergyService::ServiceState state);
+    void handleCharacteristicData(const QLowEnergyCharacteristic &info, const QByteArray &value);
+
+    void handleFacetCharacteristic(const QLowEnergyCharacteristic &info, const QByteArray &value);
 
 signals:
     void connected();
     void disconnected();
     void scanFinished();
     void error(const QString &errorString);
+    void facetChanged(int facet);
 
 private:
     QBluetoothDeviceDiscoveryAgent *m_discoveryAgent = nullptr;
